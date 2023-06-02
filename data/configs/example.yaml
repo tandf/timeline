@@ -1,0 +1,14 @@
+---
+
+- name: CCS submission tasks
+  tags: 
+    - "@example"  # All events defined in example track
+    - "#task"  # All events with "task" tag
+  start: Mar 3
+  end: Jun 3
+
+- name: CCS submission
+  tags: 
+    - "@example"  # All events defined in example track
+  start: 2023/01/01
+  end: 2023/12/31
