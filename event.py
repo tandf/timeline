@@ -15,18 +15,18 @@ class EventTime:
         self.raw_time = time
 
         if isinstance(time, str):
-            self.date = date_utils.parse_date(time, last_date)
+            self.date = date_utils.parse_date_str(time, last_date)
 
         elif isinstance(time, dict):
             if "start" in time:
-                self.start = date_utils.parse_date(time["start"], last_date)
+                self.start = date_utils.parse_date_str(time["start"], last_date)
             else:
                 # If start time not specified, use last date
                 assert last_date is not None
                 self.start = last_date
 
             assert "end" in time, f"Event end time not specified."
-            self.end = date_utils.parse_date(time["end"], self.start)
+            self.end = date_utils.parse_date_str(time["end"], self.start)
             assert self.start < self.end, \
                 "Event start time should be earlier than end time"
 

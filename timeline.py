@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 from typing import List, Tuple, Dict
 import textwrap
 import date_utils
+import argparse
 
 
 class Timeline:
@@ -173,8 +174,14 @@ class Timeline:
             else:
                 self._draw_event_date(event)
 
-    def draw_today(self) -> None:
-        x = self._get_date_x(datetime.date.today())
+    def draw_today(self, today: datetime.date = None) -> None:
+        if today is None:
+            today = datetime.date.today()
+        if today < self.config.start or today > self.config.end:
+            print(f"WARNING: {today} is out of range of the timeline "
+                  f"({self.config.start} - {self.config.end})")
+            return
+        x = self._get_date_x(today)
         self._draw_date_impl("Today", x, 0.01)
 
     def draw_grid(self, weekday: int = 0, period: int = 7) -> None:
@@ -231,35 +238,67 @@ class Timeline:
         plt.savefig(output_file, bbox_inches="tight")
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(description="Timeline")
+    parser.add_argument("--events", type=str, help="path to the events dir")
+    parser.add_argument("--configs", type=str,
+                        help="path to the config file, or dir of configs")
+    parser.add_argument("--out", type=str, help="output dir")
+    parser.add_argument("--today", type=str, help="draw today [date]")
+    parser.add_argument("working_dir", nargs="?", type=str, default=".")
+    opt = parser.parse_args()
+    return opt
+
+
 def main():
     eventDB = EventDB()
     configDB = ConfigDB()
 
-    script_path = os.path.dirname(os.path.abspath(__file__))
+    opt = parse_args()
 
-    config_dir = os.path.join(script_path, "data", "configs")
+    if opt.configs is not None:
+        config_dir = opt.configs
+    else:
+        config_dir = os.path.join(opt.working_dir, "configs")
+
+    if opt.events is not None:
+        event_dir = opt.events
+    else:
+        event_dir = os.path.join(opt.working_dir, "events")
+
+    if opt.out is not None:
+        out_dir = opt.out
+    else:
+        out_dir = os.path.join(opt.working_dir, "out")
+    if not os.path.isdir(out_dir):
+        os.mkdir(out_dir)
+
     for file in os.listdir(config_dir):
         if file.endswith(".yaml") or file.endswith(".yml"):
             configDB.load(os.path.join(config_dir, file))
 
-    event_dir = os.path.join(script_path, "data", "events")
     for file in os.listdir(event_dir):
         if file.endswith(".yaml") or file.endswith(".yml"):
             eventDB.load(os.path.join(event_dir, file))
+
+    today = None
+    if opt.today is not None:
+        today = date_utils.parse_date(None, opt.today)
+        assert today is not None, f"Cannot parse date {opt.today}"
 
     for config in configDB.configs:
         timeline = Timeline(config)
         timeline.set_events(eventDB.filter(
             config.tags, config.start, config.end))
         timeline.draw_events()
-        timeline.draw_today()
+        timeline.draw_today(today)
         timeline.draw_grid(period=14)
         timeline.draw_legend(eventDB.track_names)
 
-        out_dir = os.path.join("out", os.path.basename(config.path))
-        if not os.path.isdir(out_dir):
-            os.mkdir(out_dir)
-        timeline.dump(out_dir)
+        config_out = os.path.join(out_dir, os.path.basename(config.path))
+        if not os.path.isdir(config_out):
+            os.mkdir(config_out)
+        timeline.dump(config_out)
 
 if __name__ == "__main__":
     main()

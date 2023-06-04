@@ -8,8 +8,8 @@ class Config:
     tags: List[str]
 
     def __init__(self, raw_config: dict, path: str) -> None:
-        self.start = date_utils.parse_date(raw_config["start"])
-        self.end = date_utils.parse_date(raw_config["end"])
+        self.start = date_utils.parse_date_str(raw_config["start"])
+        self.end = date_utils.parse_date_str(raw_config["end"])
         self.path = path
         for key, value in raw_config.items():
             if not hasattr(self, key):

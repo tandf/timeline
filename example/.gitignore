@@ -1,0 +1,5 @@
+configs/*
+events/*
+out/
+!configs/example*.yaml
+!events/example*.yaml

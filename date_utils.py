@@ -20,7 +20,7 @@ def next_weekday(since: datetime.date, weekday: int) -> datetime.date:
     return since + datetime.timedelta(days=days)
 
 
-def time_delta(base: datetime.date, delta_str: str):
+def parse_delta(base: datetime.date, delta_str: str):
     match = re.match(r"\+(\d+)([dwmy])", delta_str.lower())
     if not match:
         raise ValueError(f"Cannot parse date delta {delta_str}")
@@ -56,7 +56,7 @@ def time_delta(base: datetime.date, delta_str: str):
     raise Exception(f"Cannot add time delta {delta_str} to {base}")
 
 
-def parse_date(date_str: str, last_date: datetime.date = None) -> datetime.date:
+def parse_date(last_date: datetime.date, date_str: str) -> datetime.date:
     # Replace comma
     seps = [",", "-", "/"]
     formatted_str = date_str
@@ -70,10 +70,6 @@ def parse_date(date_str: str, last_date: datetime.date = None) -> datetime.date:
         last_date = datetime.date(
             year=datetime.date.today().year, month=1, day=1)
         last_date -= datetime.timedelta(days=1)
-
-    # e.g. +5d, +4w, +2m
-    if date_str.strip().startswith("+"):
-        return time_delta(last_date, date_str)
 
     # e.g. May 04
     try:
@@ -95,5 +91,18 @@ def parse_date(date_str: str, last_date: datetime.date = None) -> datetime.date:
             return datetime.datetime.strptime(formatted_str, format_str).date()
         except ValueError:
             pass
+
+    return None
+
+
+def parse_date_str(date_str: str, last_date: datetime.date = None) -> datetime.date:
+    # e.g. +5d, +4w, +2m
+    if date_str.strip().startswith("+"):
+        return parse_delta(last_date, date_str)
+
+    else:
+        date = parse_date(last_date, date_str)
+        if date:
+            return date
 
     raise ValueError(f"Cannot parse date {date_str}")
