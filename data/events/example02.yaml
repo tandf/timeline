@@ -1,0 +1,63 @@
+---
+
+name: example 02
+
+events:
+  - name: Start of current year
+    time: Jan 1
+    description: ""
+    tags: []
+
+  - name: all work no play
+    time:
+      end: +18d
+    description: ""
+    tags: []
+
+  - name: all work no play
+    time:
+      end: +31d
+    description: ""
+    tags: []
+
+  - name: all work no play
+    time:
+      end: +4w
+    description: ""
+    tags: []
+
+  - name: all work no play
+    time:
+      end: +2w
+    description: ""
+    tags: []
+
+  - name: all work no play
+    time:
+      end: +3w
+    description: ""
+    tags: []
+
+  - name: all work no play
+    time:
+      end: +1w
+    description: ""
+    tags: []
+
+  - name: all work no play
+    time:
+      end: +1m
+    description: ""
+    tags: []
+
+  - name: all work no play
+    time:
+      end: +13d
+    description: ""
+    tags: []
+
+  - name: all work no play
+    time:
+      end: +2w
+    description: ""
+    tags: []

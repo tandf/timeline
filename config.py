@@ -7,11 +7,13 @@ class Config:
     name: str
     tags: List[str]
 
-    def __init__(self, raw_config: dict) -> None:
-        self.name = raw_config["name"]
-        self.tags = raw_config["tags"]
+    def __init__(self, raw_config: dict, path: str) -> None:
         self.start = date_utils.parse_date(raw_config["start"])
         self.end = date_utils.parse_date(raw_config["end"])
+        self.path = path
+        for key, value in raw_config.items():
+            if not hasattr(self, key):
+                setattr(self, key, value)
 
     def __str__(self) -> str:
         return f"{self.name} ({self.start} - {self.end}) [{' '.join(sorted(self.tags))}]"
@@ -36,7 +38,7 @@ class ConfigDB:
             configs = yaml.safe_load(f)
         try:
             for c in configs:
-                self.configs.append(Config(c))
+                self.configs.append(Config(c, path))
         except Exception as e:
             print(f"== Error when loading configs file {path} ==")
             raise e

@@ -2,13 +2,14 @@
 
 - name: CCS submission tasks
   tags: 
-    - "@example"  # All events defined in example track
+    - "@example-ccs"  # All events defined in example-ccs track
     - "#task"  # All events with "task" tag
-  start: Mar 3
-  end: Jun 3
+  start: Apr 3
+  end: Jul 3
+  filename: ccs-tasks
 
-- name: CCS submission
-  tags: 
-    - "@example"  # All events defined in example track
-  start: 2023/01/01
-  end: 2023/12/31
+- name: 2023 Spring
+  tags: []
+  start: 2023/03/29
+  end: 2023/06/16
+  filename: 23spring.png

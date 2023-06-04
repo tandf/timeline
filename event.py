@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Tuple, Dict
 import yaml
 import datetime
 import os
@@ -27,6 +27,8 @@ class EventTime:
 
             assert "end" in time, f"Event end time not specified."
             self.end = date_utils.parse_date(time["end"], self.start)
+            assert self.start < self.end, \
+                "Event start time should be earlier than end time"
 
         else:
             raise TypeError(f"Unknown event time: {time}")
@@ -56,6 +58,16 @@ class EventTime:
             return self.end
         else:
             return self.date
+
+    def date_in_bound(self, start: datetime.date, end: datetime.date) -> bool:
+        assert start < end
+        return self.getStartTime() < end and self.getEndTime() >= start
+
+    def date_intersection(self, start: datetime.date,
+                          end: datetime.date) -> Tuple[datetime.date, datetime.date]:
+        if not self.date_in_bound(start, end):
+            return None, None
+        return max(self.getStartTime(), start), min(self.getEndTime(), end)
 
     def __str__(self) -> str:
         if self.isPeriod():
@@ -91,14 +103,21 @@ class Event:
 
         assert "time" in raw_event, f"Event w/o time in file {file}"
         self.time = EventTime(raw_event["time"], last_date)
+        if self.time.isPeriod():
+            self.tags.append(f"#period")
+        else:
+            self.tags.append(f"#date")
 
     def filter_tags(self, tags: List[str]) -> List[str]:
         # Return a list of tags that match with this event
         assert isinstance(tags, list)
         return list(set(self.tags).intersection(set(tags)))
 
-    def filter_dates(self, start: datetime.date, end: datetime.date) -> bool:
-        return True
+    def get_track(self) -> str:
+        for tag in self.tags:
+            if tag.startswith("@"):
+                return tag
+        return None
 
     def __str__(self) -> str:
         return f"{self.name} ({self.time}) [{' '.join(sorted(self.tags))}]"
@@ -110,32 +129,48 @@ class Event:
 class EventDB:
     files: List[str]
     events: List[Event]
+    track_names: Dict[str, str]
 
     def __init__(self) -> None:
         self.files = []
         self.events = []
+        self.track_names = {}
 
     def load(self, path: str, update: bool = False) -> None:
         self.files.append(path)
 
         # Read file and parse events
         with open(path, "r") as f:
-            events = yaml.safe_load(f)
+            event_file = yaml.safe_load(f)
+
+        track = f"@{os.path.splitext(os.path.basename(path))[0]}"
+        self.track_names[track] = event_file["name"]
+
         last_date = None
+        events = []
         try:
-            for e in events:
+            for e in event_file["events"]:
                 event = Event(e, path, last_date)
-                self.events.append(event)
+                events.append(event)
                 last_date = event.time.getEndTime()
         except Exception as e:
             print(f"== Error when loading events file {path} ==")
             raise e
 
-        # TODO: Back up and update the events file
+        self.events += events
 
-    def filter_tags(self, tags: List[str]) -> List[Event]:
-        # Return a list of events matching the tags
-        return [e for e in self.events if e.filter_tags(tags)]
+        # TODO: Back up and update the events file
+        # 1. Create ID for each event
+
+    def filter(self, tags: List[str] = None, start: datetime.date = None,
+               end: datetime.date = None) -> List[Event]:
+        events = self.events
+        if tags:
+            events = [e for e in events if e.filter_tags(tags)]
+        assert (start is None) == (end is None)
+        if start is not None and end is not None:
+            events = [e for e in events if e.time.date_in_bound(start, end)]
+        return events
 
     def __str__(self) -> str:
         sorted_events = sorted(

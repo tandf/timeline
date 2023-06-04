@@ -15,6 +15,11 @@ def next_month_day(since: datetime.date, month: int, day: int) -> datetime.date:
         year += 1
 
 
+def next_weekday(since: datetime.date, weekday: int) -> datetime.date:
+    days = (weekday + 7 - since.weekday()) % 7
+    return since + datetime.timedelta(days=days)
+
+
 def time_delta(base: datetime.date, delta_str: str):
     match = re.match(r"\+(\d+)([dwmy])", delta_str.lower())
     if not match:
