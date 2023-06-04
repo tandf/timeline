@@ -10,6 +10,7 @@ from typing import List, Tuple, Dict
 import textwrap
 import date_utils
 import argparse
+import math
 
 
 class Timeline:
@@ -23,6 +24,7 @@ class Timeline:
     default_date_vline_style = {"color": "red", "linewidth": 3}
     default_date_text_style = {"color": "red", "ha": "center", "va": "bottom",
                           "fontsize": 18}
+    default_box_text_style = {"ha": "center", "va": "center"}
 
     def __init__(self, config: Config) -> None:
         self.fig = None
@@ -88,10 +90,14 @@ class Timeline:
         return transformed_bbox
 
     def _draw_text_in_box(self, text: str, center_x: float, center_y: float,
-                         width: float, height: float, breakline: bool = True,
-                         max_fontsize: float = 18) -> Text:
+                         width: float, height: float, maxline: int = 3,
+                         max_fontsize: float = 18, text_style: dict = None) -> Text:
+        if text_style is None:
+            text_style = {}
+        text_style = {**self.default_box_text_style, **text_style}
+
         fontsize = max_fontsize
-        txt = plt.text(center_x, center_y, text, ha='center', va='center')
+        txt = plt.text(center_x, center_y, text, **text_style)
         while fontsize > 0:
             txt.set_fontsize(fontsize)
             extent = self._get_text_extent(txt)
@@ -99,17 +105,19 @@ class Timeline:
             if text_width <= width and text_height <= height:
                 return txt
 
-            if breakline and text_width > width and text_height <= height:
-                line_cnt = 2
-                while line_cnt < 4 and text_height <= height:
-                    new_text = "\n".join(textwrap.wrap(
-                        text, width=len(text)/line_cnt, break_long_words=False))
-                    txt.set_text(new_text)
+            # Try to wrap the text
+            if maxline > 1 and text_width > width and text_height <= height:
+                line_width = len(text)
+                min_width = min(len(line) for line in textwrap.wrap(
+                    text, width=1, break_long_words=False))
+                while line_width >= min_width and text_height <= height:
+                    lines = textwrap.wrap(text, width=line_width, break_long_words=False)
+                    txt.set_text("\n".join(lines))
                     extent = self._get_text_extent(txt)
                     text_width, text_height = extent.width, extent.height
-                    if text_width <= width and text_height <= height:
+                    if text_width <= width and text_height <= height and len(lines) <= maxline:
                         return txt
-                    line_cnt += 1
+                    line_width -= 1
                 txt.set_text(text)
 
             fontsize -= 1
@@ -159,7 +167,8 @@ class Timeline:
         text_style = {**self.default_date_text_style, **text_style}
 
         vline = plt.axvline(x=x, ymin=ymin, ymax=ymax, **vline_style)
-        txt = plt.text(x, (ymax+text_y_offset)*self.height, text, **text_style)
+        txt = self._draw_text_in_box(text, x, (ymax+text_y_offset)*self.height,
+                                     2, 1, text_style=text_style, maxline=2)
 
         return vline, txt
 
