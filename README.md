@@ -1,17 +1,19 @@
 # README
 
-Generate timeline used for meetings, especially for the quarterly report.
+Since Alfred loves timeline, this tool automatically generate timeline used for meetings, e.g. for the purpose of quarterly report.
 
-Example:
+## Example:
 ```bash
 python timeline.py example
 ```
+
+And find results in `example/out`.
+
+![output example](example/out-example.png)
 
 ## TODO
 - [x] Define event format
 - [x] Define config format
 - [x] Draw in plt
-    - [ ] URL
     - [ ] Background tag
-- [ ] Interactive
 - [ ] Install
