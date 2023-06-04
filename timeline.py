@@ -20,9 +20,9 @@ class Timeline:
     track_colors = ["#dbacac", "#a2c9aa", "#909eb4", "#b06262", "#605e5e",
                     "#f8c758", "#bdeff6", "#5ec6ec", "#70d4c0", "#9d725e"]
 
-    default_vline_style = {"color": "red", "linewidth": 3}
-    default_text_style = {"color": "red", "ha": "center", "va": "bottom",
-                          "fontsize": 24}
+    default_date_vline_style = {"color": "red", "linewidth": 3}
+    default_date_text_style = {"color": "red", "ha": "center", "va": "bottom",
+                          "fontsize": 18}
 
     def __init__(self, config: Config) -> None:
         self.fig = None
@@ -152,11 +152,11 @@ class Timeline:
 
         if vline_style is None:
             vline_style = {}
-        vline_style = {**self.default_vline_style, **vline_style}
+        vline_style = {**self.default_date_vline_style, **vline_style}
 
         if text_style is None:
             text_style = {}
-        text_style = {**self.default_text_style, **text_style}
+        text_style = {**self.default_date_text_style, **text_style}
 
         vline = plt.axvline(x=x, ymin=ymin, ymax=ymax, **vline_style)
         txt = plt.text(x, (ymax+text_y_offset)*self.height, text, **text_style)

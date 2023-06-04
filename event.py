@@ -28,7 +28,7 @@ class EventTime:
             assert "end" in time, f"Event end time not specified."
             self.end = date_utils.parse_date_str(time["end"], self.start)
             assert self.start < self.end, \
-                "Event start time should be earlier than end time"
+                f"Event start {self.start} is later than end {self.end}"
 
         else:
             raise TypeError(f"Unknown event time: {time}")

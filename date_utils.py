@@ -8,7 +8,7 @@ def next_month_day(since: datetime.date, month: int, day: int) -> datetime.date:
     while True:
         try:
             date = datetime.datetime(year, month, day).date()
-            if date > since:
+            if date >= since:
                 return date
         except ValueError:
             pass
@@ -20,21 +20,13 @@ def next_weekday(since: datetime.date, weekday: int) -> datetime.date:
     return since + datetime.timedelta(days=days)
 
 
-def parse_delta(base: datetime.date, delta_str: str):
-    match = re.match(r"\+(\d+)([dwmy])", delta_str.lower())
-    if not match:
-        raise ValueError(f"Cannot parse date delta {delta_str}")
-
-    assert base is not None, f"Cannot find base for {delta_str}"
-
-    number = int(match.group(1))
-    unit_char = match.group(2)
-    if unit_char == "d":
-        return base + datetime.timedelta(days=number)
-    elif unit_char == "w":
-        return base + datetime.timedelta(weeks=number)
+def _parse_delta(base: datetime.date, sign, number, unit) -> datetime.date:
+    if unit == "d":
+        return base + datetime.timedelta(days=number) * sign
+    elif unit == "w":
+        return base + datetime.timedelta(weeks=number) * sign
     else:
-        if unit_char == "m":
+        if unit == "m":
             new_year = math.floor(number / 12) + base.year
             new_month = number % 12 + base.month
         else:  # "y"
@@ -44,16 +36,31 @@ def parse_delta(base: datetime.date, delta_str: str):
             new_month -= 12
             new_year += 1
 
-    compensate = 0  # Handle months with 31 days -> 30/29/28
-    while compensate <= 3:
-        try:
-            date_base = base + datetime.timedelta(days=-compensate)
-            return date_base.replace(year=new_year, month=new_month)
-        except ValueError:
-            pass
-        compensate += 1
+        compensate = 0  # Handle months with 31 days -> 30/29/28
+        while compensate <= 3:
+            try:
+                date_base = base + datetime.timedelta(days=-compensate) * sign
+                return date_base.replace(year=new_year, month=new_month)
+            except ValueError:
+                pass
+            compensate += 1
 
-    raise Exception(f"Cannot add time delta {delta_str} to {base}")
+
+def parse_delta(base: datetime.date, delta_str: str):
+    if not re.match(r"([+-])(\d+)([dwmy])+", delta_str.lower()):
+        return None
+
+    date = base
+    if date is None:
+        date = datetime.date.today()
+
+    matches = re.findall(r"([+-])(\d+)([dwmy])+", delta_str.lower())
+    for parts in matches:
+        sign = -1 if parts[0] == "-" else 1
+        number = int(parts[1])
+        unit_char = parts[2]
+        date = _parse_delta(date, sign, number, unit_char)
+    return date
 
 
 def parse_date(last_date: datetime.date, date_str: str) -> datetime.date:
@@ -97,12 +104,12 @@ def parse_date(last_date: datetime.date, date_str: str) -> datetime.date:
 
 def parse_date_str(date_str: str, last_date: datetime.date = None) -> datetime.date:
     # e.g. +5d, +4w, +2m
-    if date_str.strip().startswith("+"):
-        return parse_delta(last_date, date_str)
+    date = parse_delta(last_date, date_str)
+    if date:
+        return date
 
-    else:
-        date = parse_date(last_date, date_str)
-        if date:
-            return date
+    date = parse_date(last_date, date_str)
+    if date:
+        return date
 
     raise ValueError(f"Cannot parse date {date_str}")
