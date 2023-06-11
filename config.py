@@ -14,6 +14,9 @@ class Config:
         self.filter = FilterCond(
             raw_config["filter"] if "filter" in raw_config else None)
 
+        if "today" in raw_config:
+            self.today = date_utils.parse_date_str(raw_config["today"])
+
         for key, value in raw_config.items():
             if not hasattr(self, key):
                 setattr(self, key, value)

@@ -64,7 +64,8 @@ class Timeline:
         self.caption_padding = 0.1
         self.legend_padding = 0.15
         self.timeline_height = 1 - self.caption_padding - self.legend_padding
-        self.track_height = min(self.timeline_height / self.track_cnt, 0.15)
+        self.track_height = min(self.timeline_height /
+                                (self.track_cnt if self.track_cnt else 1), 0.15)
 
         by_y = self.Ymin + self.legend_padding * self.height
         bg_height = self.height * \
@@ -185,18 +186,22 @@ class Timeline:
 
     def draw_today(self, today: datetime.date = None) -> None:
         if today is None:
-            today = datetime.date.today()
+            today = getattr(self.config, "today", datetime.date.today())
+
         if today < self.config.start or today > self.config.end:
-            print(f"WARNING: {today} is out of range of the timeline "
-                  f"({self.config.start} - {self.config.end})")
             return
+
         x = self._get_date_x(today)
         self._draw_date_impl("Today", x, 0.01)
 
-    def draw_grid(self, weekday: int = 0, period: int = None) -> None:
+    def draw_grid(self, weekday: int = None, period: int = None) -> None:
+        if weekday is None:
+            weekday = getattr(self.config, "weekday", 0)
+
         if period is None:
             period = (self.config.end - self.config.start).days // 28
-            period = 2 ** (period.bit_length() - 1) * 7
+            period = (2 ** (period.bit_length() - 1)) * 7
+            period = max(period, 7)
 
         date = date_utils.next_weekday(
             self.config.start - datetime.timedelta(days=1), weekday)
@@ -220,6 +225,9 @@ class Timeline:
             date += datetime.timedelta(days=period)
 
     def draw_legend(self, track_names: Dict[str, str]) -> None:
+        if self.track_cnt == 0:
+            return
+
         max_height = (self.legend_padding - 0.03) * self.height
         max_width = 0.15 * self.width
         ratio = 3  # width : height
@@ -257,7 +265,6 @@ def parse_args():
     parser.add_argument("--configs", type=str,
                         help="path to the config file, or dir of configs")
     parser.add_argument("--out", type=str, help="output dir")
-    parser.add_argument("--today", type=str, help="draw today [date]")
     parser.add_argument("working_dir", nargs="?", type=str, default=".")
     opt = parser.parse_args()
     return opt
@@ -294,24 +301,23 @@ def main():
         if file.endswith(".yaml") or file.endswith(".yml"):
             eventDB.load(os.path.join(event_dir, file))
 
-    today = None
-    if opt.today is not None:
-        today = date_utils.parse_date(None, opt.today)
-        assert today is not None, f"Cannot parse date {opt.today}"
-
     for config in configDB.configs:
-        timeline = Timeline(config)
-        timeline.set_events(eventDB.filter(
-            config.filter, config.start, config.end))
-        timeline.draw_events()
-        timeline.draw_today(today)
-        timeline.draw_grid()
-        timeline.draw_legend(eventDB.track_names)
+        try:
+            timeline = Timeline(config)
+            timeline.set_events(eventDB.filter(
+                config.filter, config.start, config.end))
+            timeline.draw_events()
+            timeline.draw_today()
+            timeline.draw_grid()
+            timeline.draw_legend(eventDB.track_names)
 
-        config_out = os.path.join(out_dir, os.path.basename(config.path))
-        if not os.path.isdir(config_out):
-            os.mkdir(config_out)
-        timeline.dump(config_out)
+            config_out = os.path.join(out_dir, os.path.basename(config.path))
+            if not os.path.isdir(config_out):
+                os.mkdir(config_out)
+            timeline.dump(config_out)
+        except Exception as e:
+            print(f"Error with config: {config.name} defined in {config.path}")
+            raise e
 
 if __name__ == "__main__":
     main()
