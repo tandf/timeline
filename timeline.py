@@ -10,12 +10,12 @@ from typing import List, Tuple, Dict
 import textwrap
 import date_utils
 import argparse
-import math
 
 
 class Timeline:
     fig: Figure
     config: Config
+    events: List[Event]
 
     track_colors = ["#dbacac", "#a2c9aa", "#909eb4", "#b06262", "#f8c758",
                     "#bdeff6", "#5ec6ec", "#70d4c0", "#9d725e"]
@@ -46,7 +46,8 @@ class Timeline:
 
     def set_events(self, events: List[Event]) -> None:
         self.events = events
-        tags = set(tag for e in self.events for tag in e.tags)
+        tags = set(
+            tag for e in self.events for tag in e.tags if e.time.isPeriod())
         self.tracks = sorted(tag for tag in tags if tag.startswith("@"))
         self.track_cnt = len(self.tracks)
         self._draw_init()
@@ -301,7 +302,7 @@ def main():
     for config in configDB.configs:
         timeline = Timeline(config)
         timeline.set_events(eventDB.filter(
-            config.tags, config.start, config.end))
+            config.filter, config.start, config.end))
         timeline.draw_events()
         timeline.draw_today(today)
         timeline.draw_grid()

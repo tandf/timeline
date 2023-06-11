@@ -1,15 +1,21 @@
 ---
 
 - name: CCS submission tasks
-  tags: 
-    - "@example-ccs"  # All events defined in example-ccs track
-    - "#task"  # All events with "task" tag
+  filter: # Disjunctive normal form: if from track example-ccs, and has tag task
+    - ["@example-ccs", "task"]
   start: Apr 3
   end: Jul 3
   filename: ccs-tasks
 
 - name: 2023 Spring
-  tags: []
   start: 2023/03/29
   end: 2023/06/16
   filename: 23spring.png
+
+- name: 2023 Spring but no CCS tasks
+  filter: # Disjunctive normal form: if not from track example-ccs, or dates in ccs track
+    - ["@example-ccs", "!task"]
+    - ["!@example-ccs"]
+  start: 2023/03/29
+  end: 2023/06/16
+  filename: 23spring-wo-ccs.png

@@ -3,6 +3,7 @@ import yaml
 import datetime
 import os
 import date_utils
+from config import FilterCond
 
 
 class EventTime:
@@ -159,14 +160,13 @@ class EventDB:
 
         self.events += events
 
-        # TODO: Back up and update the events file
-        # 1. Create ID for each event
-
-    def filter(self, tags: List[str] = None, start: datetime.date = None,
+    def filter(self, filter: FilterCond = None, start: datetime.date = None,
                end: datetime.date = None) -> List[Event]:
         events = self.events
-        if tags:
-            events = [e for e in events if e.filter_tags(tags)]
+
+        if filter:
+            events = [e for e in events if filter.filter(e.tags)]
+
         assert (start is None) == (end is None)
         if start is not None and end is not None:
             events = [e for e in events if e.time.date_in_bound(start, end)]
