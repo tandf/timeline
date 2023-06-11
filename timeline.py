@@ -17,9 +17,8 @@ class Timeline:
     fig: Figure
     config: Config
 
-    # 10 colors should be enough
-    track_colors = ["#dbacac", "#a2c9aa", "#909eb4", "#b06262", "#605e5e",
-                    "#f8c758", "#bdeff6", "#5ec6ec", "#70d4c0", "#9d725e"]
+    track_colors = ["#dbacac", "#a2c9aa", "#909eb4", "#b06262", "#f8c758",
+                    "#bdeff6", "#5ec6ec", "#70d4c0", "#9d725e"]
 
     default_date_vline_style = {"color": "red", "linewidth": 3}
     default_date_text_style = {"color": "red", "ha": "center", "va": "bottom",
@@ -193,7 +192,11 @@ class Timeline:
         x = self._get_date_x(today)
         self._draw_date_impl("Today", x, 0.01)
 
-    def draw_grid(self, weekday: int = 0, period: int = 7) -> None:
+    def draw_grid(self, weekday: int = 0, period: int = None) -> None:
+        if period is None:
+            period = (self.config.end - self.config.start).days // 28
+            period = 2 ** (period.bit_length() - 1) * 7
+
         date = date_utils.next_weekday(
             self.config.start - datetime.timedelta(days=1), weekday)
 
@@ -301,7 +304,7 @@ def main():
             config.tags, config.start, config.end))
         timeline.draw_events()
         timeline.draw_today(today)
-        timeline.draw_grid(period=14)
+        timeline.draw_grid()
         timeline.draw_legend(eventDB.track_names)
 
         config_out = os.path.join(out_dir, os.path.basename(config.path))
