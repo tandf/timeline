@@ -192,7 +192,7 @@ class Timeline:
             return
 
         x = self._get_date_x(today)
-        self._draw_date_impl("Today", x, 0.01)
+        self._draw_date_impl("Today", x, 0.03)
 
     def draw_grid(self, weekday: int = None, period: int = None) -> None:
         if weekday is None:
